@@ -96,7 +96,8 @@
                     // *** SEO MAGIC ***
                     // Update the page title and meta description dynamically
                     document.title = `${post.title} | Chenglin Pua's Blog`;
-                    document.querySelector('meta[name="description"]').setAttribute("content", post.content.substring(0, 160));
+                    document.querySelector('meta[name="description"]').setAttribute("content", post.description || post.content.substring(0, 160));
+
                     // *****************
 
                     // Convert Markdown content to HTML
@@ -128,4 +129,5 @@
     </script>
 </body>
 </html>
+
 
