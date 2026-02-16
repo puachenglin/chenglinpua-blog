@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- SEO Tags: These will be updated by JavaScript -->
+    <title>Loading Article...</title>
+    <meta name="description" content="Loading content.">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        /* Style for rendered content */
+        .article-content h3 { font-size: 1.5rem; font-weight: 700; margin-top: 2rem; margin-bottom: 0.5rem; }
+        .article-content p { line-height: 1.75; margin-bottom: 1rem; }
+        .article-content a { color: #2563EB; text-decoration: underline; }
+        .article-content ul { list-style-type: disc; margin-left: 1.5rem; margin-bottom: 1rem; }
+        .article-content blockquote { border-left: 4px solid #D1D5DB; padding-left: 1rem; margin-left: 0; font-style: italic; color: #4B5563; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <a href="./" class="text-xl font-bold text-gray-900 hover:text-blue-600">&larr; Back to All Articles</a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div id="article-container">
+            <div id="loading-indicator" class="text-center py-20">
+                <p class="text-lg text-gray-600">Loading article content...</p>
+            </div>
+            <!-- Article will be dynamically inserted here -->
+        </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="mt-16 py-8 bg-gray-800 text-white">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+             <p class="text-gray-400 text-sm">&copy; <span id="current-year"></span> Chenglin Pua. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
+
+        // --- IMPORTANT: PASTE YOUR FIREBASE CONFIG HERE ---
+        const firebaseConfig = {
+            // apiKey: "...",
+            // authDomain: "...",
+            // projectId: "...",
+            // storageBucket: "...",
+            // messagingSenderId: "...",
+            // appId: "..."
+        };
+        // ----------------------------------------------------
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        function renderContent(htmlContent) {
+            // Find all YouTube links and replace them with embeds
+            const withYoutubeEmbeds = htmlContent.replace(/<a href="(https:\/\/www\.youtube\.com\/watch\?v=([a-zA-Z0-9_-]+))">.*<\/a>/g, 
+                '<div class="aspect-video my-6"><iframe class="w-full h-full" src="https://www.youtube.com/embed/$2" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>'
+            );
+            return withYoutubeEmbeds;
+        }
+
+        async function fetchAndRenderArticle() {
+            const container = document.getElementById('article-container');
+            const loadingIndicator = document.getElementById('loading-indicator');
+            
+            const params = new URLSearchParams(window.location.search);
+            const postId = params.get('id');
+
+            if (!postId) {
+                container.innerHTML = '<p class="text-center text-red-500">Article ID is missing. Please go back and select an article.</p>';
+                return;
+            }
+
+            try {
+                const docRef = doc(db, "posts", postId);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const post = docSnap.data();
+
+                    // *** SEO MAGIC ***
+                    // Update the page title and meta description dynamically
+                    document.title = `${post.title} | Chenglin Pua's Blog`;
+                    document.querySelector('meta[name="description"]').setAttribute("content", post.content.substring(0, 160));
+                    // *****************
+
+                    // Convert Markdown content to HTML
+                    const rawHtmlContent = marked.parse(post.content);
+                    // Process for YouTube videos etc.
+                    const finalHtmlContent = renderContent(rawHtmlContent);
+
+                    container.innerHTML = `
+                        <article>
+                            ${post.coverImageUrl ? `<img src="${post.coverImageUrl}" alt="${post.title}" class="w-full h-96 object-cover rounded-lg mb-8"/>` : ''}
+                            <h1 class="text-5xl font-extrabold mb-4 text-gray-900">${post.title}</h1>
+                            <p class="text-md text-gray-500 mb-8">Published on ${new Date(post.publishDate).toLocaleDateString()}</p>
+                            <div class="prose prose-lg max-w-none article-content">${finalHtmlContent}</div>
+                        </article>
+                    `;
+                } else {
+                    container.innerHTML = `<p class="text-center text-red-500">Sorry, we couldn't find an article with that ID.</p>`;
+                }
+            } catch (error) {
+                console.error("Error fetching article:", error);
+                container.innerHTML = `<p class="text-center text-red-500">Could not load the article. Please check the console.</p>`;
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+        fetchAndRenderArticle();
+    </script>
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chenglin Pua's Blog</title>
+    <meta name="description" content="A personal blog by Chenglin Pua, sharing thoughts on technology, science, and life.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-10">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <h1 class="text-3xl font-bold text-gray-900">Chenglin's Thoughts</h1>
+            <p class="text-gray-500 mt-1">A blog on science, technology, and personal reflections.</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div id="loading-indicator" class="text-center py-20">
+            <p class="text-lg text-gray-600">Loading articles...</p>
+        </div>
+        <div id="articles-list" class="space-y-12">
+            <!-- Articles will be dynamically inserted here by JavaScript -->
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-16 py-8 bg-gray-800 text-white">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div id="social-links-container" class="flex justify-center items-center space-x-6 mb-4">
+                <!-- Social links will be dynamically inserted here -->
+            </div>
+            <p class="text-gray-400 text-sm">&copy; <span id="current-year"></span> Chenglin Pua. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- IMPORTANT: PASTE YOUR FIREBASE CONFIG HERE ---
+        const firebaseConfig = {
+            // apiKey: "...",
+            // authDomain: "...",
+            // projectId: "...",
+            // storageBucket: "...",
+            // messagingSenderId: "...",
+            // appId: "..."
+        };
+        // ----------------------------------------------------
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const socialLinks = [
+            { name: "LinkedIn", url: "https://www.linkedin.com/in/your-profile/" }, // Please add your LinkedIn URL
+            { name: "ResearchGate", url: "https://www.researchgate.net/profile/Pua-Chenglin/" },
+            { name: "Google Scholar", url: "https://scholar.google.com/citations?user=OSv_Bm4AAAAJ&hl=en/" },
+            { name: "YouTube", url: "https://www.youtube.com/@AtomiMuseum/" },
+            { name: "BiliBili", url: "https://space.bilibili.com/3493105227533275/" },
+        ];
+
+        function renderSocialLinks() {
+            const container = document.getElementById('social-links-container');
+            container.innerHTML = socialLinks.map(link => 
+                `<a href="${link.url}" target="_blank" class="text-gray-300 hover:text-white transition">${link.name}</a>`
+            ).join('<span class="text-gray-500">|</span>');
+        }
+
+        async function fetchAndRenderArticles() {
+            const articlesList = document.getElementById('articles-list');
+            const loadingIndicator = document.getElementById('loading-indicator');
+            
+            try {
+                // Query the 'posts' collection, ordering by publish date descending
+                const postsQuery = query(collection(db, "posts"), orderBy("publishDate", "desc"));
+                const querySnapshot = await getDocs(postsQuery);
+
+                if (querySnapshot.empty) {
+                    articlesList.innerHTML = '<p class="text-center text-gray-500">No articles have been posted yet. Check back soon!</p>';
+                } else {
+                    articlesList.innerHTML = querySnapshot.docs.map(doc => {
+                        const post = doc.data();
+                        const postId = doc.id; // The document ID will be our unique identifier
+                        const postUrl = `post.html?id=${encodeURIComponent(postId)}`;
+                        
+                        // Create a short preview of the content
+                        const preview = post.content.split(' ').slice(0, 30).join(' ') + '...';
+
+                        return `
+                            <article>
+                                ${post.coverImageUrl ? `<a href="${postUrl}"><img src="${post.coverImageUrl}" alt="${post.title}" class="w-full h-64 object-cover rounded-lg mb-4"/></a>` : ''}
+                                <h2 class="text-3xl font-bold mb-2">
+                                    <a href="${postUrl}" class="text-gray-900 hover:text-blue-600 transition">${post.title}</a>
+                                </h2>
+                                <p class="text-sm text-gray-500 mb-4">Published on ${new Date(post.publishDate).toLocaleDateString()}</p>
+                                <p class="text-gray-600 leading-relaxed">${preview}</p>
+                                <a href="${postUrl}" class="text-blue-600 hover:text-blue-800 font-semibold mt-4 inline-block">Read More &rarr;</a>
+                            </article>
+                        `;
+                    }).join('');
+                }
+            } catch (error) {
+                console.error("Error fetching articles:", error);
+                articlesList.innerHTML = '<p class="text-center text-red-500">Could not load articles. Please check the console for errors.</p>';
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+
+        // --- Initial Page Load ---
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+        renderSocialLinks();
+        fetchAndRenderArticles();
+    </script>
+</body>
+</html>
