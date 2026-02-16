@@ -81,7 +81,7 @@
             
             try {
                 // Query the 'posts' collection, ordering by publish date descending
-                const postsQuery = query(collection(db, "posts"), orderBy("publishDate", "desc"));
+                const postsQuery = query(collection(db, "blog post"), orderBy("publishDate", "desc"));
                 const querySnapshot = await getDocs(postsQuery);
 
                 if (querySnapshot.empty) {
@@ -123,6 +123,7 @@
     </script>
 </body>
 </html>
+
 
 
 
