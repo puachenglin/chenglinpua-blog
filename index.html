@@ -42,10 +42,11 @@
     </footer>
 
     <script type="module">
+        // --- CONSOLIDATED IMPORTS (ALL AT THE TOP) ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- IMPORTANT: PASTE YOUR FIREBASE CONFIG HERE ---
+        // --- FIREBASE CONFIG ---
         const firebaseConfig = {
           apiKey: "AIzaSyCZYc7e02iVgDio8lOvPkj0lgNbuN2q_kM",
           authDomain: "chenglin-pua-blog.firebaseapp.com",
@@ -55,13 +56,13 @@
           appId: "1:775858431734:web:dd49663c60087c3ba5eed7",
           measurementId: "G-TC1DHDV12S"
         };
-        // ----------------------------------------------------
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // --- SOCIAL LINKS ---
         const socialLinks = [
-            { name: "LinkedIn", url: "https://www.linkedin.com/in/leonard-pua-cheng-lin-38139418b/" }, // Please add your LinkedIn URL
+            { name: "LinkedIn", url: "https://www.linkedin.com/in/leonard-pua-cheng-lin-38139418b/" },
             { name: "ResearchGate", url: "https://www.researchgate.net/profile/Pua-Chenglin/" },
             { name: "Google Scholar", url: "https://scholar.google.com/citations?user=OSv_Bm4AAAAJ&hl=en/" },
             { name: "YouTube", url: "https://www.youtube.com/@AtomiMuseum/" },
@@ -75,17 +76,15 @@
             ).join('<span class="text-gray-500">|</span>');
         }
 
-// --- NEW AND IMPROVED REAL-TIME FUNCTION ---
-        import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        function fetchAndRenderArticles() { // Note: we remove 'async' as onSnapshot is not a one-time promise
+        // --- REAL-TIME FUNCTION (UNCHANGED) ---
+        function fetchAndRenderArticles() {
             const articlesList = document.getElementById('articles-list');
             const loadingIndicator = document.getElementById('loading-indicator');
         
             const postsQuery = query(collection(db, "blog post"), orderBy("publishDate", "desc"));
         
-            // Use onSnapshot for a real-time listener
             onSnapshot(postsQuery, (querySnapshot) => {
-                loadingIndicator.style.display = 'none'; // Hide loading indicator once data arrives
+                loadingIndicator.style.display = 'none'; 
         
                 if (querySnapshot.empty) {
                     articlesList.innerHTML = '<p class="text-center text-gray-500">No articles have been posted yet. Check back soon!</p>';
@@ -97,7 +96,6 @@
                         
                         const preview = post.content.split(' ').slice(0, 30).join(' ') + '...';
         
-                        // FIX for Invalid Date is here:
                         const publishDate = post.publishDate ? post.publishDate.toDate().toLocaleDateString() : 'Date not available';
         
                         return `
@@ -113,21 +111,22 @@
                         `;
                     }).join('');
                 }
-            }, (error) => { // This function runs if there's an error
+            }, (error) => {
                 console.error("Error fetching articles:", error);
                 articlesList.innerHTML = '<p class="text-center text-red-500">Could not load articles. Please check the console for errors.</p>';
                 loadingIndicator.style.display = 'none';
             });
         }
 
-
-        // --- Initial Page Load ---
+        // --- INITIAL PAGE LOAD ---
         document.getElementById('current-year').textContent = new Date().getFullYear();
         renderSocialLinks();
         fetchAndRenderArticles();
     </script>
+
 </body>
 </html>
+
 
 
 
