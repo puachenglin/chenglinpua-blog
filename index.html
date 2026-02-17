@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Updated Title -->
     <title>Chenglin Pua's blog</title>
-    <!-- Updated Meta Description -->
     <meta name="description" content="A platform for sharing reflections and insights—open to thoughtful dialogue and the exchange of ideas.">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -91,12 +89,12 @@
                 if (querySnapshot.empty) {
                     articlesList.innerHTML = '<p class="text-center text-gray-500">No articles have been posted yet. Check back soon!</p>';
                 } else {
-                    articlesList.innerHTML = querySnapshot.docs.map(doc => {
+                    // Generate the HTML for all the articles
+                    const articlesHtml = querySnapshot.docs.map(doc => {
                         const post = doc.data();
                         const postId = doc.id;
                         const postUrl = `post.html?id=${encodeURIComponent(postId)}`;
                         
-                        // CHANGE 1: Use the 'description' field for the preview text.
                         const descriptionText = post.description || post.content.substring(0, 150) + '...';
                         const publishDate = post.publishDate ? post.publishDate.toDate().toLocaleDateString() : 'Date not available';
         
@@ -108,13 +106,11 @@
                                 </h2>
                                 <p class="text-sm text-gray-500 mb-4">Published on ${publishDate}</p>
                                 
-                                <!-- Use the description text instead of a content preview -->
                                 <p class="text-gray-600 leading-relaxed">${descriptionText}</p>
-                                <!-- CHANGE 2: Add a container for the links -->
+                                
                                 <div class="mt-4 flex items-center space-x-6">
                                     <a href="${postUrl}" class="text-blue-600 hover:text-blue-800 font-semibold">Read More &rarr;</a>
                                     
-                                    <!-- This will only show if 'newspaperUrl' exists in the document -->
                                     ${post.newspaperUrl ? 
                                         `<a href="${post.newspaperUrl}" target="_blank" class="text-green-600 hover:text-green-800 font-semibold">View Publication &rarr;</a>` 
                                         : ''
@@ -123,6 +119,14 @@
                             </article>
                         `;
                     }).join('');
+
+                    // *** NEW CHANGE HERE ***
+                    // Append the "More coming soon" message after the articles
+                    articlesList.innerHTML = articlesHtml + `
+                        <div class="text-center pt-8">
+                            <p class="text-gray-500 italic">More coming soon...</p>
+                        </div>
+                    `;
                 }
             }, (error) => {
                 console.error("Error fetching articles:", error);
