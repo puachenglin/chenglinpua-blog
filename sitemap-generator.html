@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Sitemap Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow">
+        <h1 class="text-2xl font-bold mb-4">Blog Sitemap Generator</h1>
+        <p class="mb-4">Click the button to generate the sitemap.xml content for your blog based on the articles in your Firestore database.</p>
+        
+        <!-- IMPORTANT: UPDATE THIS URL -->
+        <div class="mb-4">
+            <label for="baseUrl" class="block font-medium">Your Website's Base URL:</label>
+            <input type="text" id="baseUrl" class="w-full p-2 border rounded" value="https://YOUR-GITHUB-USERNAME.github.io/YOUR-REPO-NAME/">
+            <p class="text-sm text-gray-600 mt-1">Make sure this ends with a forward slash `/`.</p>
+        </div>
+        
+        <button id="generateBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Generate Sitemap</button>
+        <hr class="my-6">
+        <h2 class="text-xl font-semibold mb-2">Generated `sitemap.xml` Content:</h2>
+        <textarea id="output" class="w-full h-96 p-2 font-mono text-sm border bg-gray-50 rounded" readonly></textarea>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyCZYc7e02iVgDio8lOvPkj0lgNbuN2q_kM",
+          authDomain: "chenglin-pua-blog.firebaseapp.com",
+          projectId: "chenglin-pua-blog",
+          storageBucket: "chenglin-pua-blog.firebasestorage.app",
+          messagingSenderId: "775858431734",
+          appId: "1:775858431734:web:dd49663c60087c3ba5eed7",
+          measurementId: "G-TC1DHDV12S"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        document.getElementById('generateBtn').addEventListener('click', async () => {
+            const output = document.getElementById('output');
+            const baseUrl = document.getElementById('baseUrl').value;
+            output.value = "Loading posts...";
+
+            try {
+                const querySnapshot = await getDocs(collection(db, "blog post"));
+                let urls = [];
+                
+                // Add the homepage
+                urls.push(baseUrl);
+
+                querySnapshot.forEach((doc) => {
+                    const postUrl = `${baseUrl}post.html?id=${encodeURIComponent(doc.id)}`;
+                    urls.push(postUrl);
+                });
+
+                const sitemapContent = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls.map(url => `
+    <url>
+        <loc>${url}</loc>
+        <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    </url>`).join('')}
+</urlset>`;
+                
+                output.value = sitemapContent.trim();
+            } catch (error) {
+                output.value = "Error fetching posts: " + error;
+            }
+        });
+    </script>
+</body>
+</html>
