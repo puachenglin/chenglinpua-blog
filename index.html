@@ -24,10 +24,11 @@
     <!-- Main Content -->
     <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         
-        <!-- Pinned Articles Section -->
+        <!-- *** NEW: Pinned Articles Section *** -->
         <section id="pinned-articles-section" class="mb-16">
             <h2 class="text-2xl font-bold text-gray-800 border-b-2 border-blue-500 pb-2 mb-8">Recommended Reads</h2>
             <div id="pinned-articles-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Pinned articles will be dynamically inserted here -->
                 <div class="text-center text-gray-500 md:col-span-2 lg:col-span-3">Loading pinned articles...</div>
             </div>
         </section>
@@ -43,15 +44,19 @@
     <!-- Footer -->
     <footer class="mt-16 py-8 bg-gray-800 text-white">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div id="social-links-container" class="flex justify-center items-center space-x-6 mb-4"></div>
+            <div id="social-links-container" class="flex justify-center items-center space-x-6 mb-4">
+                <!-- Social links will be dynamically inserted here -->
+            </div>
             <p class="text-gray-400 text-sm">&copy; <span id="current-year"></span> Chenglin Pua. All Rights Reserved.</p>
         </div>
     </footer>
 
     <script type="module">
+        // --- CONSOLIDATED IMPORTS (ALL AT THE TOP) ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, query, orderBy, onSnapshot, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // --- FIREBASE CONFIG ---
         const firebaseConfig = {
           apiKey: "AIzaSyCZYc7e02iVgDio8lOvPkj0lgNbuN2q_kM",
           authDomain: "chenglin-pua-blog.firebaseapp.com",
@@ -74,14 +79,23 @@
         ];
         function renderSocialLinks() {
             const container = document.getElementById('social-links-container');
-            container.innerHTML = socialLinks.map(link => `<a href="${link.url}" target="_blank" class="text-gray-300 hover:text-white transition">${link.name}</a>`).join('<span class="text-gray-500">|</span>');
+            container.innerHTML = socialLinks.map(link => 
+                `<a href="${link.url}" target="_blank" class="text-gray-300 hover:text-white transition">${link.name}</a>`
+            ).join('<span class="text-gray-500">|</span>');
         }
 
+        // *** NEW: Pinned Articles Function ***
         async function fetchAndRenderPinnedArticles() {
             const container = document.getElementById('pinned-articles-container');
             if (!container) return;
 
-            const pinnedArticleIds = [ 'YOUR_FIRST_ARTICLE_ID', 'YOUR_SECOND_ARTICLE_ID', 'YOUR_THIRD_ARTICLE_ID' ];
+            // --- IMPORTANT: REPLACE WITH YOUR ACTUAL FIRESTORE DOCUMENT IDS ---
+            const pinnedArticleIds = [
+                'YOUR_FIRST_ARTICLE_ID',
+                'YOUR_SECOND_ARTICLE_ID',
+                'YOUR_THIRD_ARTICLE_ID'
+            ];
+
             const promises = pinnedArticleIds.map(id => getDoc(doc(db, "blog post", id)));
 
             try {
@@ -93,23 +107,22 @@
                         const postUrl = `post.html?id=${encodeURIComponent(postId)}`;
                         const descriptionText = post.description ? post.description.substring(0, 90) + '...' : '';
 
-                        // *** THIS IS THE IMPORTANT PART FOR THE IMAGE ***
-                        // It looks for a field called 'coverImageUrl' in your document.
-                        // If it doesn't find it, it shows a placeholder image.
-                        const imageUrl = post.coverImageUrl || 'https://via.placeholder.com/400x200.png?text=Image+Not+Found';
-
                         return `
                             <div class="bg-white rounded-lg shadow-lg overflow-hidden transform hover:-translate-y-1 transition-transform duration-300 relative">
                                 <!-- Pin Icon -->
                                 <div class="absolute top-3 right-3 z-10 bg-white/50 backdrop-blur-sm rounded-full p-1">
-                                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-red-600 transform -rotate-45"><path fill-rule="evenodd" d="M11.53 2.47a.75.75 0 011.06 0l.97 1.023a.75.75 0 001.06 0l2.122-2.122a.75.75 0 011.06 1.06l-2.122 2.122a.75.75 0 000 1.06l1.023.97a.75.75 0 010 1.06l-6.06 6.06a.75.75 0 01-1.06 0l-6.06-6.06a.75.75 0 010-1.06l1.023-.97a.75.75 0 000-1.06L3.47 3.53a.75.75 0 011.06-1.06l2.122 2.122a.75.75 0 001.06 0l.97-1.023z" clip-rule="evenodd" /><path d="M10.72 9.72a.75.75 0 011.06 0l2.25 2.25a.75.75 0 01-1.06 1.06l-2.25-2.25a.75.75 0 010-1.06z" /></svg>
+                                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-red-600 transform -rotate-45">
+                                        <path fill-rule="evenodd" d="M11.53 2.47a.75.75 0 011.06 0l.97 1.023a.75.75 0 001.06 0l2.122-2.122a.75.75 0 011.06 1.06l-2.122 2.122a.75.75 0 000 1.06l1.023.97a.75.75 0 010 1.06l-6.06 6.06a.75.75 0 01-1.06 0l-6.06-6.06a.75.75 0 010-1.06l1.023-.97a.75.75 0 000-1.06L3.47 3.53a.75.75 0 011.06-1.06l2.122 2.122a.75.75 0 001.06 0l.97-1.023z" clip-rule="evenodd" />
+                                        <path d="M10.72 9.72a.75.75 0 011.06 0l2.25 2.25a.75.75 0 01-1.06 1.06l-2.25-2.25a.75.75 0 010-1.06z" />
+                                    </svg>
                                 </div>
                                 <a href="${postUrl}">
-                                    <!-- The 'imageUrl' variable from above is used here -->
-                                    <img src="${imageUrl}" alt="${post.title}" class="w-full h-40 object-cover">
+                                    <img src="${post.coverImageUrl || 'https://via.placeholder.com/400x200.png?text=Image'}" alt="${post.title}" class="w-full h-40 object-cover">
                                 </a>
                                 <div class="p-4">
-                                    <h3 class="font-bold text-lg mb-2 h-14 overflow-hidden"><a href="${postUrl}" class="text-gray-900 hover:text-blue-600 transition">${post.title}</a></h3>
+                                    <h3 class="font-bold text-lg mb-2 h-14 overflow-hidden">
+                                        <a href="${postUrl}" class="text-gray-900 hover:text-blue-600 transition">${post.title}</a>
+                                    </h3>
                                     <p class="text-gray-600 text-sm leading-relaxed h-20 overflow-hidden">${descriptionText}</p>
                                 </div>
                             </div>
@@ -117,13 +130,16 @@
                     }
                     return ''; 
                 }).join('');
+
                 container.innerHTML = articlesHtml;
+
             } catch (error) {
                 console.error("Error fetching pinned articles:", error);
                 container.innerHTML = '<p class="text-center text-red-500 col-span-3">Could not load pinned articles.</p>';
             }
         }
 
+        // --- REGULAR ARTICLES REAL-TIME FUNCTION ---
         function fetchAndRenderArticles() {
             const articlesList = document.getElementById('articles-list');
             const loadingIndicator = document.getElementById('loading-indicator');
@@ -140,10 +156,13 @@
                         const postUrl = `post.html?id=${encodeURIComponent(postId)}`;
                         const descriptionText = post.description || post.content.substring(0, 150) + '...';
                         const publishDate = post.publishDate ? post.publishDate.toDate().toLocaleDateString() : 'Date not available';
+        
                         return `
                             <article>
-                                <a href="${postUrl}"><img src="${post.coverImageUrl}" alt="${post.title}" class="w-full h-64 object-cover rounded-lg mb-4"/></a>
-                                <h2 class="text-3xl font-bold mb-2"><a href="${postUrl}" class="text-gray-900 hover:text-blue-600 transition">${post.title}</a></h2>
+                                ${post.coverImageUrl ? `<a href="${postUrl}"><img src="${post.coverImageUrl}" alt="${post.title}" class="w-full h-64 object-cover rounded-lg mb-4"/></a>` : ''}
+                                <h2 class="text-3xl font-bold mb-2">
+                                    <a href="${postUrl}" class="text-gray-900 hover:text-blue-600 transition">${post.title}</a>
+                                </h2>
                                 <p class="text-sm text-gray-500 mb-4">Published on ${publishDate}</p>
                                 <p class="text-gray-600 leading-relaxed">${descriptionText}</p>
                                 <div class="mt-4 flex items-center space-x-6">
@@ -153,7 +172,12 @@
                             </article>
                         `;
                     }).join('');
-                    articlesList.innerHTML = articlesHtml + `<div class="text-center pt-8"><p class="text-gray-500 italic">More coming soon...</p></div>`;
+
+                    articlesList.innerHTML = articlesHtml + `
+                        <div class="text-center pt-8">
+                            <p class="text-gray-500 italic">More coming soon...</p>
+                        </div>
+                    `;
                 }
             }, (error) => {
                 console.error("Error fetching articles:", error);
@@ -162,10 +186,11 @@
             });
         }
 
+        // --- INITIAL PAGE LOAD ---
         document.getElementById('current-year').textContent = new Date().getFullYear();
         renderSocialLinks();
-        fetchAndRenderPinnedArticles();
-        fetchAndRenderArticles();
+        fetchAndRenderPinnedArticles(); // Fetch pinned articles
+        fetchAndRenderArticles(); // Fetch all other articles
     </script>
 </body>
 </html>
