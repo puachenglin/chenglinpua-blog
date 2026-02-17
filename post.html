@@ -51,23 +51,21 @@
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
 
-        // --- IMPORTANT: PASTE YOUR FIREBASE CONFIG HERE ---
-            const firebaseConfig = {
-              apiKey: "AIzaSyCZYc7e02iVgDio8lOvPkj0lgNbuN2q_kM",
-              authDomain: "chenglin-pua-blog.firebaseapp.com",
-              projectId: "chenglin-pua-blog",
-              storageBucket: "chenglin-pua-blog.firebasestorage.app",
-              messagingSenderId: "775858431734",
-              appId: "1:775858431734:web:dd49663c60087c3ba5eed7",
-              measurementId: "G-TC1DHDV12S"
-            };
-        // ----------------------------------------------------
+        // --- FIREBASE CONFIG ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyCZYc7e02iVgDio8lOvPkj0lgNbuN2q_kM",
+          authDomain: "chenglin-pua-blog.firebaseapp.com",
+          projectId: "chenglin-pua-blog",
+          storageBucket: "chenglin-pua-blog.firebasestorage.app",
+          messagingSenderId: "775858431734",
+          appId: "1:775858431734:web:dd49663c60087c3ba5eed7",
+          measurementId: "G-TC1DHDV12S"
+        };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
         function renderContent(htmlContent) {
-            // Find all YouTube links and replace them with embeds
             const withYoutubeEmbeds = htmlContent.replace(/<a href="(https:\/\/www\.youtube\.com\/watch\?v=([a-zA-Z0-9_-]+))">.*<\/a>/g, 
                 '<div class="aspect-video my-6"><iframe class="w-full h-full" src="https://www.youtube.com/embed/$2" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>'
             );
@@ -92,24 +90,30 @@
 
                 if (docSnap.exists()) {
                     const post = docSnap.data();
-
-                    // *** SEO MAGIC ***
-                    // Update the page title and meta description dynamically
+                    
                     document.title = `${post.title} | Chenglin Pua's Blog`;
                     document.querySelector('meta[name="description"]').setAttribute("content", post.description || post.content.substring(0, 160));
-
-                    // *****************
-
-                    // Convert Markdown content to HTML
+                    
                     const rawHtmlContent = marked.parse(post.content);
-                    // Process for YouTube videos etc.
                     const finalHtmlContent = renderContent(rawHtmlContent);
 
+                    // *** THIS IS THE UPDATED SECTION ***
                     container.innerHTML = `
                         <article>
                             ${post.coverImageUrl ? `<img src="${post.coverImageUrl}" alt="${post.title}" class="w-full h-96 object-cover rounded-lg mb-8"/>` : ''}
                             <h1 class="text-5xl font-extrabold mb-4 text-gray-900">${post.title}</h1>
-                            <p class="text-sm text-gray-500 mb-4">Published on ${post.publishDate.toDate().toLocaleDateString()}</p>
+                            
+                            <!-- New container for date and external link -->
+                            <div class="flex items-center space-x-6 mb-8">
+                                <p class="text-md text-gray-500">Published on ${post.publishDate.toDate().toLocaleDateString()}</p>
+                                
+                                <!-- This only appears if 'newspaperUrl' exists -->
+                                ${post.newspaperUrl ? 
+                                    `<a href="${post.newspaperUrl}" target="_blank" class="text-md text-green-600 hover:text-green-800 font-semibold">View Original Publication &rarr;</a>` 
+                                    : ''
+                                }
+                            </div>
+
                             <div class="prose prose-lg max-w-none article-content">${finalHtmlContent}</div>
                         </article>
                     `;
@@ -129,7 +133,3 @@
     </script>
 </body>
 </html>
-
-
-
-
