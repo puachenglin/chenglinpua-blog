@@ -75,46 +75,51 @@
             ).join('<span class="text-gray-500">|</span>');
         }
 
-        async function fetchAndRenderArticles() {
+// --- NEW AND IMPROVED REAL-TIME FUNCTION ---
+        import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        function fetchAndRenderArticles() { // Note: we remove 'async' as onSnapshot is not a one-time promise
             const articlesList = document.getElementById('articles-list');
             const loadingIndicator = document.getElementById('loading-indicator');
-            
-            try {
-                // Query the 'posts' collection, ordering by publish date descending
-                const postsQuery = query(collection(db, "blog post"), orderBy("publishDate", "desc"));
-                const querySnapshot = await getDocs(postsQuery);
-
+        
+            const postsQuery = query(collection(db, "blog post"), orderBy("publishDate", "desc"));
+        
+            // Use onSnapshot for a real-time listener
+            onSnapshot(postsQuery, (querySnapshot) => {
+                loadingIndicator.style.display = 'none'; // Hide loading indicator once data arrives
+        
                 if (querySnapshot.empty) {
                     articlesList.innerHTML = '<p class="text-center text-gray-500">No articles have been posted yet. Check back soon!</p>';
                 } else {
                     articlesList.innerHTML = querySnapshot.docs.map(doc => {
                         const post = doc.data();
-                        const postId = doc.id; // The document ID will be our unique identifier
+                        const postId = doc.id;
                         const postUrl = `post.html?id=${encodeURIComponent(postId)}`;
                         
-                        // Create a short preview of the content
                         const preview = post.content.split(' ').slice(0, 30).join(' ') + '...';
-
+        
+                        // FIX for Invalid Date is here:
+                        const publishDate = post.publishDate ? post.publishDate.toDate().toLocaleDateString() : 'Date not available';
+        
                         return `
                             <article>
                                 ${post.coverImageUrl ? `<a href="${postUrl}"><img src="${post.coverImageUrl}" alt="${post.title}" class="w-full h-64 object-cover rounded-lg mb-4"/></a>` : ''}
                                 <h2 class="text-3xl font-bold mb-2">
                                     <a href="${postUrl}" class="text-gray-900 hover:text-blue-600 transition">${post.title}</a>
                                 </h2>
-                                <p class="text-sm text-gray-500 mb-4">Published on ${new Date(post.publishDate).toLocaleDateString()}</p>
+                                <p class="text-sm text-gray-500 mb-4">Published on ${publishDate}</p>
                                 <p class="text-gray-600 leading-relaxed">${preview}</p>
                                 <a href="${postUrl}" class="text-blue-600 hover:text-blue-800 font-semibold mt-4 inline-block">Read More &rarr;</a>
                             </article>
                         `;
                     }).join('');
                 }
-            } catch (error) {
+            }, (error) => { // This function runs if there's an error
                 console.error("Error fetching articles:", error);
                 articlesList.innerHTML = '<p class="text-center text-red-500">Could not load articles. Please check the console for errors.</p>';
-            } finally {
                 loadingIndicator.style.display = 'none';
-            }
+            });
         }
+
 
         // --- Initial Page Load ---
         document.getElementById('current-year').textContent = new Date().getFullYear();
@@ -123,6 +128,7 @@
     </script>
 </body>
 </html>
+
 
 
 
