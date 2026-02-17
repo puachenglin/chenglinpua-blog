@@ -36,6 +36,7 @@
         <div id="loading-indicator" class="text-center py-20">
             <p class="text-lg text-gray-600">Loading articles...</p>
         </div>
+
         <div id="articles-list" class="space-y-12">
             <!-- Regular articles will be dynamically inserted here -->
         </div>
@@ -77,6 +78,7 @@
             { name: "YouTube", url: "https://www.youtube.com/@AtomiMuseum/" },
             { name: "BiliBili", url: "https://space.bilibili.com/3493105227533275/" },
         ];
+
         function renderSocialLinks() {
             const container = document.getElementById('social-links-container');
             container.innerHTML = socialLinks.map(link => 
@@ -95,9 +97,7 @@
                 'YgcPIkqjudw5aVHjUKqq',
                 'bZlE4hKvfn3xiGHPxuVW'
             ];
-
             const promises = pinnedArticleIds.map(id => getDoc(doc(db, "blog post", id)));
-
             try {
                 const docSnapshots = await Promise.all(promises);
                 const articlesHtml = docSnapshots.map(docSnap => {
@@ -106,7 +106,6 @@
                         const postId = docSnap.id;
                         const postUrl = `post.html?id=${encodeURIComponent(postId)}`;
                         const descriptionText = post.description ? post.description.substring(0, 90) + '...' : '';
-
                         return `
                             <div class="bg-white rounded-lg shadow-lg overflow-hidden transform hover:-translate-y-1 transition-transform duration-300 relative">
                                 <!-- Pin Icon -->
@@ -130,9 +129,7 @@
                     }
                     return ''; 
                 }).join('');
-
                 container.innerHTML = articlesHtml;
-
             } catch (error) {
                 console.error("Error fetching pinned articles:", error);
                 container.innerHTML = '<p class="text-center text-red-500 col-span-3">Could not load pinned articles.</p>';
@@ -157,9 +154,9 @@
                         const descriptionText = post.description || post.content.substring(0, 150) + '...';
                         const publishDate = post.publishDate ? post.publishDate.toDate().toLocaleDateString() : 'Date not available';
         
+                        // UPDATED PART: The line for coverImageUrl has been removed from here
                         return `
                             <article>
-                                ${post.coverImageUrl ? `<a href="${postUrl}"><img src="${post.coverImageUrl}" alt="${post.title}" class="w-full h-64 object-cover rounded-lg mb-4"/></a>` : ''}
                                 <h2 class="text-3xl font-bold mb-2">
                                     <a href="${postUrl}" class="text-gray-900 hover:text-blue-600 transition">${post.title}</a>
                                 </h2>
@@ -172,7 +169,6 @@
                             </article>
                         `;
                     }).join('');
-
                     articlesList.innerHTML = articlesHtml + `
                         <div class="text-center pt-8">
                             <p class="text-gray-500 italic">More coming soon...</p>
@@ -194,4 +190,3 @@
     </script>
 </body>
 </html>
-
