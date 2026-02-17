@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chenglin Pua's Blog</title>
-    <meta name="description" content="A personal blog by Chenglin Pua, sharing thoughts on technology, science, and life.">
+    <!-- Updated Title -->
+    <title>Chenglin Pua's blog</title>
+    <!-- Updated Meta Description -->
+    <meta name="description" content="A platform for sharing reflections and insights—open to thoughtful dialogue and the exchange of ideas.">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
@@ -56,6 +58,7 @@
           appId: "1:775858431734:web:dd49663c60087c3ba5eed7",
           measurementId: "G-TC1DHDV12S"
         };
+
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
@@ -95,7 +98,6 @@
                         
                         // CHANGE 1: Use the 'description' field for the preview text.
                         const descriptionText = post.description || post.content.substring(0, 150) + '...';
-
                         const publishDate = post.publishDate ? post.publishDate.toDate().toLocaleDateString() : 'Date not available';
         
                         return `
@@ -108,7 +110,6 @@
                                 
                                 <!-- Use the description text instead of a content preview -->
                                 <p class="text-gray-600 leading-relaxed">${descriptionText}</p>
-
                                 <!-- CHANGE 2: Add a container for the links -->
                                 <div class="mt-4 flex items-center space-x-6">
                                     <a href="${postUrl}" class="text-blue-600 hover:text-blue-800 font-semibold">Read More &rarr;</a>
@@ -135,14 +136,5 @@
         renderSocialLinks();
         fetchAndRenderArticles();
     </script>
-
-
 </body>
 </html>
-
-
-
-
-
-
-
