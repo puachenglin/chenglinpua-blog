@@ -56,7 +56,6 @@
           appId: "1:775858431734:web:dd49663c60087c3ba5eed7",
           measurementId: "G-TC1DHDV12S"
         };
-
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
@@ -76,7 +75,7 @@
             ).join('<span class="text-gray-500">|</span>');
         }
 
-        // --- REAL-TIME FUNCTION (UNCHANGED) ---
+        // --- REAL-TIME FUNCTION (WITH NEW CHANGES) ---
         function fetchAndRenderArticles() {
             const articlesList = document.getElementById('articles-list');
             const loadingIndicator = document.getElementById('loading-indicator');
@@ -94,8 +93,9 @@
                         const postId = doc.id;
                         const postUrl = `post.html?id=${encodeURIComponent(postId)}`;
                         
-                        const preview = post.content.split(' ').slice(0, 30).join(' ') + '...';
-        
+                        // CHANGE 1: Use the 'description' field for the preview text.
+                        const descriptionText = post.description || post.content.substring(0, 150) + '...';
+
                         const publishDate = post.publishDate ? post.publishDate.toDate().toLocaleDateString() : 'Date not available';
         
                         return `
@@ -105,8 +105,20 @@
                                     <a href="${postUrl}" class="text-gray-900 hover:text-blue-600 transition">${post.title}</a>
                                 </h2>
                                 <p class="text-sm text-gray-500 mb-4">Published on ${publishDate}</p>
-                                <p class="text-gray-600 leading-relaxed">${preview}</p>
-                                <a href="${postUrl}" class="text-blue-600 hover:text-blue-800 font-semibold mt-4 inline-block">Read More &rarr;</a>
+                                
+                                <!-- Use the description text instead of a content preview -->
+                                <p class="text-gray-600 leading-relaxed">${descriptionText}</p>
+
+                                <!-- CHANGE 2: Add a container for the links -->
+                                <div class="mt-4 flex items-center space-x-6">
+                                    <a href="${postUrl}" class="text-blue-600 hover:text-blue-800 font-semibold">Read More &rarr;</a>
+                                    
+                                    <!-- This will only show if 'newspaperUrl' exists in the document -->
+                                    ${post.newspaperUrl ? 
+                                        `<a href="${post.newspaperUrl}" target="_blank" class="text-green-600 hover:text-green-800 font-semibold">View Publication &rarr;</a>` 
+                                        : ''
+                                    }
+                                </div>
                             </article>
                         `;
                     }).join('');
@@ -124,8 +136,10 @@
         fetchAndRenderArticles();
     </script>
 
+
 </body>
 </html>
+
 
 
 
