@@ -105,6 +105,7 @@
                         const post = docSnap.data();
                         const postId = docSnap.id;
 const postUrl = `post.html?id=${encodeURIComponent(postId)}`; 
+const descriptionText = post.description || post.content.substring(0, 150) + '...';
                         return `
                             <div class="bg-white rounded-lg shadow-lg overflow-hidden transform hover:-translate-y-1 transition-transform duration-300 relative">
                                 <!-- Pin Icon -->
@@ -189,6 +190,7 @@ const postUrl = `post.html?id=${encodeURIComponent(postId)}`;
     </script>
 </body>
 </html>
+
 
 
 
