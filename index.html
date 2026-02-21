@@ -104,8 +104,7 @@
                     if (docSnap.exists()) {
                         const post = docSnap.data();
                         const postId = docSnap.id;
-                        const postUrl = `/posts/${encodeURIComponent(postId)}`; 
-                        const descriptionText = post.description ? post.description.substring(0, 90) + '...' : '';
+const postUrl = `post.html?id=${encodeURIComponent(postId)}`; 
                         return `
                             <div class="bg-white rounded-lg shadow-lg overflow-hidden transform hover:-translate-y-1 transition-transform duration-300 relative">
                                 <!-- Pin Icon -->
@@ -150,8 +149,8 @@
                     const articlesHtml = querySnapshot.docs.map(doc => {
                         const post = doc.data();
                         const postId = doc.id;
-                        const postUrl = `/posts/${encodeURIComponent(postId)}`;
-                        const descriptionText = post.description || post.content.substring(0, 150) + '...';
+    const postUrl = `post.html?id=${encodeURIComponent(postId)}`;
+    const descriptionText = post.description || post.content.substring(0, 150) + '...';
                         const publishDate = post.publishDate ? post.publishDate.toDate().toLocaleDateString() : 'Date not available';
         
                         // UPDATED PART: The line for coverImageUrl has been removed from here
@@ -190,5 +189,6 @@
     </script>
 </body>
 </html>
+
 
 
