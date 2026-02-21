@@ -104,7 +104,7 @@
                     if (docSnap.exists()) {
                         const post = docSnap.data();
                         const postId = docSnap.id;
-                        const postUrl = `post.html?id=${encodeURIComponent(postId)}`;
+                        const postUrl = `/posts/${encodeURIComponent(postId)}`; 
                         const descriptionText = post.description ? post.description.substring(0, 90) + '...' : '';
                         return `
                             <div class="bg-white rounded-lg shadow-lg overflow-hidden transform hover:-translate-y-1 transition-transform duration-300 relative">
@@ -150,7 +150,7 @@
                     const articlesHtml = querySnapshot.docs.map(doc => {
                         const post = doc.data();
                         const postId = doc.id;
-                        const postUrl = `post.html?id=${encodeURIComponent(postId)}`;
+                        const postUrl = `/posts/${encodeURIComponent(postId)}`;
                         const descriptionText = post.description || post.content.substring(0, 150) + '...';
                         const publishDate = post.publishDate ? post.publishDate.toDate().toLocaleDateString() : 'Date not available';
         
@@ -190,4 +190,5 @@
     </script>
 </body>
 </html>
+
 
