@@ -8,7 +8,7 @@
     ],
     "rewrites": [
       {
-        "source": "/post.html",
+        "source": "/posts/**", // <-- IMPORTANT: Catches any URL starting with /posts/
         "function": "renderPost"
       }
     ]
