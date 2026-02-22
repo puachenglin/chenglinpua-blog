@@ -42,8 +42,36 @@
     <!-- Your existing styles and scripts -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* ... your styles ... */
+        /* 
+         *  These custom styles enhance the default Tailwind 'prose' styling. 
+         */
+    
+        /* 
+         *  1. INCREASE PARAGRAPH SPACING 
+         *  This adds more vertical space after each paragraph in the article body,
+         *  making it much easier to read.
+         */
+        .article-content p {
+            margin-bottom: 2rem; /* Adjust this value (e.g., 1.75rem) to your liking */
+        }
+    
+        /*
+         *  2. CREATE THE "DROP CAP"
+         *  This targets the very first letter of the first paragraph and makes it
+         *  larger and italic, just like in a professional publication.
+         */
+        .article-content p:first-of-type::first-letter {
+            font-size: 4.5em;         /* Makes the letter much larger */
+            font-weight: bold;        /* Makes it bold */
+            font-style: italic;       /* Makes it sloped */
+            float: left;              /* Allows the rest of the text to wrap around it */
+            line-height: 0.8;         /* Pulls the lines of text closer to the letter */
+            margin-right: 0.1em;      /* Adds a little space between the letter and the text */
+            margin-top: 0.05em;       /* Fine-tunes the vertical alignment */
+            color: #111827;           /* A dark color for contrast, matching your titles */
+        }
     </style>
+
 </head>
 <body class="bg-gray-50 text-gray-800">
 
@@ -169,6 +197,7 @@
     </script>
 </body>
 </html>
+
 
 
 
