@@ -123,25 +123,36 @@
                     const finalHtmlContent = renderContent(rawHtmlContent);
 
                     // *** THIS IS THE UPDATED SECTION ***
+                    // ... INSIDE THE fetchAndRenderArticle function
                     container.innerHTML = `
                         <article>
                             ${post.coverImageUrl ? `<img src="${post.coverImageUrl}" alt="${post.title}" class="w-full h-96 object-cover rounded-lg mb-8"/>` : ''}
                             <h1 class="text-5xl font-extrabold mb-4 text-gray-900">${post.title}</h1>
                             
-                            <!-- New container for date and external link -->
+                            <!-- Container for date and external link -->
                             <div class="flex items-center space-x-6 mb-8">
                                 <p class="text-md text-gray-500">Published on ${post.publishDate.toDate().toLocaleDateString()}</p>
                                 
-                                <!-- This only appears if 'newspaperUrl' exists -->
                                 ${post.newspaperUrl ? 
                                     `<a href="${post.newspaperUrl}" target="_blank" class="text-md text-green-600 hover:text-green-800 font-semibold">View Original Publication &rarr;</a>` 
                                     : ''
                                 }
                             </div>
-
+                    
+                            <!-- ✅ NEW: Summary/Description Section -->
+                            ${post.description ? 
+                                `<div class="mb-10 p-4 bg-gray-100 border-l-4 border-blue-500 rounded-r-lg">
+                                    <p class="text-lg text-gray-700 italic"><strong class="font-semibold not-italic text-gray-900">Summary:</strong> ${post.description}</p>
+                                </div>` 
+                                : ''
+                            }
+                            
+                            <!-- Main Content -->
                             <div class="prose prose-lg max-w-none article-content">${finalHtmlContent}</div>
                         </article>
                     `;
+                    // ...
+
                 } else {
                     container.innerHTML = `<p class="text-center text-red-500">Sorry, we couldn't find an article with that ID.</p>`;
                 }
@@ -158,5 +169,6 @@
     </script>
 </body>
 </html>
+
 
 
