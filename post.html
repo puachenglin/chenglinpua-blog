@@ -68,6 +68,12 @@
             margin-top: 0.05em;
             color: #111827;
         }
+       .subtitle-style {
+            font-weight: 700; /* This makes it bold */
+            color: #1f2937;    /* A slightly darker gray for emphasis */
+            text-align: left; /* Subtitles often look better left-aligned than justified */
+            margin-top: 3rem; /* Adds extra space above the subtitle */
+        }
     </style>
 
 
@@ -123,7 +129,25 @@
             );
             return withYoutubeEmbeds;
         }
-
+        
+        function styleSubtitles(container) {
+            if (!container) return;
+        
+            const paragraphs = container.querySelectorAll('.article-content p');
+        
+            paragraphs.forEach(p => {
+                // We get the text and trim any whitespace
+                const text = p.textContent.trim();
+                // We split the text by spaces to count the words
+                const wordCount = text.split(/\s+/).filter(word => word.length > 0).length;
+        
+                // The condition: must have words, but fewer than 10
+                if (wordCount > 0 && wordCount < 10) {
+                    p.classList.add('subtitle-style');
+                }
+            });
+        }
+        
         async function fetchAndRenderArticle() {
             const container = document.getElementById('article-container');
             const loadingIndicator = document.getElementById('loading-indicator');
@@ -196,6 +220,7 @@
     </script>
 </body>
 </html>
+
 
 
 
