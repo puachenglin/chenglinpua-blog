@@ -52,7 +52,7 @@
                 urls.push(baseUrl);
 
                 querySnapshot.forEach((doc) => {
-                    const postUrl = `${baseUrl}post.html?id=${encodeURIComponent(doc.id)}`;
+                    const postUrl = `${baseUrl}posts/${encodeURIComponent(doc.id)}`;
                     urls.push(postUrl);
                 });
 
