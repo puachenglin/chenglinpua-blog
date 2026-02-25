@@ -1,241 +1,241 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>__POST_TITLE__</title>
-    <meta name="description" content="__POST_DESCRIPTION__">
-    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
-    <link rel="canonical" href="__POST_URL__">
-
-    <meta property="og:title" content="__POST_TITLE__">
-    <meta property="og:description" content="__POST_DESCRIPTION__">
-    <meta property="og:image" content="__POST_IMAGE_URL__">
-    <meta property="og:url" content="__POST_URL__">
-    <meta property="og:type" content="article">
-
-    <script type="application/ld+json" id="structured-data">
-    {
-      "@context": "https://schema.org",
-      "@type": "BlogPosting",
-      "mainEntityOfPage": {
-        "@type": "WebPage",
-        "@id": "__POST_URL__"
-      },
-      "headline": "__POST_TITLE__",
-      "description": "__POST_DESCRIPTION__",
-      "image": "__POST_IMAGE_URL__",
-      "author": {
-        "@type": "Person",
-        "name": "Chenglin Pua"
-      },
-      "publisher": {
-        "@type": "Organization",
-        "name": "Chenglin Pua's Blog"
-      },
-      "datePublished": "__POST_PUBLISH_DATE__"
-    }
-    </script>
-
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .article-content p {
-            margin-bottom: 2rem;
-            text-align: justify;
-        }
-
-        .article-content p:first-of-type:not(:has(img))::first-letter,
-        .article-content p:first-of-type:has(img) + p::first-letter {
-            font-size: 4.5em;
-            font-weight: bold;
-            font-style: italic;
-            float: left;
-            line-height: 0.8;
-            margin-right: 0.1em;
-            margin-top: 0.05em;
-            color: #111827;
-        }
-
-        .subtitle-style {
-            font-weight: 700;
-            color: #1f2937;
-            text-align: left;
-            margin-top: 3rem;
-        }
-    </style>
-</head>
-<body class="bg-gray-50 text-gray-800">
-    <header class="bg-white shadow-sm">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-            <a href="/" class="text-xl font-bold text-gray-900 hover:text-blue-600">&larr; Back to All Articles</a>
-        </div>
-    </header>
-
-    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div id="article-container">
-            <div id="loading-indicator" class="text-center py-20">
-                <p class="text-lg text-gray-600">Loading article content...</p>
-            </div>
-        </div>
-    </main>
-
-    <footer class="mt-16 py-8 bg-gray-800 text-white">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-             <p class="text-gray-400 text-sm">&copy; <span id="current-year"></span> Chenglin Pua. All Rights Reserved.</p>
-        </div>
-    </footer>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
-        import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
-
-        const firebaseConfig = {
-          apiKey: "AIzaSyCZYc7e02iVgDio8lOvPkj0lgNbuN2q_kM",
-          authDomain: "chenglin-pua-blog.firebaseapp.com",
-          projectId: "chenglin-pua-blog",
-          storageBucket: "chenglin-pua-blog.firebasestorage.app",
-          messagingSenderId: "775858431734",
-          appId: "1:775858431734:web:dd49663c60087c3ba5eed7",
-          measurementId: "G-TC1DHDV12S"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const storage = getStorage(app);
-
-        function renderContent(htmlContent) {
-            return htmlContent.replace(/<a href="(https:\/\/www\.youtube\.com\/watch\?v=([a-zA-Z0-9_-]+))">.*<\/a>/g,
-                '<div class="aspect-video my-6"><iframe class="w-full h-full" src="https://www.youtube.com/embed/$2" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>'
-            );
-        }
-
-        function styleSubtitles(container) {
-            const paragraphs = container.querySelectorAll('.article-content p');
-            paragraphs.forEach(p => {
-                const text = p.textContent.trim();
-                const wordCount = text.split(/\s+/).filter(word => word.length > 0).length;
-                if (wordCount > 0 && wordCount < 10) {
-                    p.classList.add('subtitle-style');
-                }
-            });
-        }
-
-        function getPostIdFromUrl() {
-            const params = new URLSearchParams(window.location.search);
-            const queryId = params.get('id');
-            if (queryId) return queryId;
-
-            const segments = window.location.pathname.split('/').filter(Boolean);
-            if (segments.length >= 2 && segments[0] === 'posts') {
-                return decodeURIComponent(segments[1]);
-            }
-            return null;
-        }
-
-        async function resolveImageUrl(rawUrl) {
-            if (!rawUrl) return '';
-            if (rawUrl.startsWith('gs://')) {
-                try {
-                    return await getDownloadURL(ref(storage, rawUrl));
-                } catch (error) {
-                    console.error('Unable to resolve gs:// cover image URL:', error);
-                    return '';
-                }
-            }
-            return rawUrl;
-        }
-
-        function updateSeoTags({ title, description, imageUrl, canonicalUrl, publishDate }) {
-            document.title = `${title} | Chenglin Pua's Blog`;
-            document.querySelector('meta[name="description"]').setAttribute('content', description);
-            document.querySelector('meta[property="og:title"]').setAttribute('content', title);
-            document.querySelector('meta[property="og:description"]').setAttribute('content', description);
-            document.querySelector('meta[property="og:image"]').setAttribute('content', imageUrl || '');
-            document.querySelector('meta[property="og:url"]').setAttribute('content', canonicalUrl);
-            document.querySelector('link[rel="canonical"]').setAttribute('href', canonicalUrl);
-
-            const data = {
-                '@context': 'https://schema.org',
-                '@type': 'BlogPosting',
-                mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
-                headline: title,
-                description,
-                image: imageUrl || '',
-                author: { '@type': 'Person', name: 'Chenglin Pua' },
-                publisher: { '@type': 'Organization', name: "Chenglin Pua's Blog" },
-                datePublished: publishDate || ''
-            };
-            document.getElementById('structured-data').textContent = JSON.stringify(data);
-        }
-
-        async function fetchAndRenderArticle() {
-            const container = document.getElementById('article-container');
-            const loadingIndicator = document.getElementById('loading-indicator');
-            const postId = getPostIdFromUrl();
-
-            if (!postId) {
-                container.innerHTML = '<p class="text-center text-red-500">Article ID is missing. Please go back and select an article.</p>';
-                return;
-            }
-
-            try {
-                const docRef = doc(db, 'blog post', postId);
-                const docSnap = await getDoc(docRef);
-
-                if (!docSnap.exists()) {
-                    container.innerHTML = `<p class="text-center text-red-500">Sorry, we couldn't find an article with that ID.</p>`;
-                    return;
-                }
-
-                const post = docSnap.data();
-                const description = (post.description && post.description.trim())
-                    ? post.description
-                    : (post.content ? `${post.content.substring(0, 160)}...` : 'Read this article on Chenglin Pua\'s blog.');
-                const publishDate = post.publishDate?.toDate?.().toISOString?.() || '';
-                const readableDate = post.publishDate?.toDate?.().toLocaleDateString?.() || 'Date not available';
-                const canonicalUrl = `${window.location.origin}/posts/${encodeURIComponent(postId)}`;
-                const coverImageUrl = await resolveImageUrl(post.coverImageUrl);
-
-                updateSeoTags({
-                    title: post.title || 'Untitled post',
-                    description,
-                    imageUrl: coverImageUrl,
-                    canonicalUrl,
-                    publishDate
-                });
-
-                const rawHtmlContent = marked.parse(post.content || '');
-                const finalHtmlContent = renderContent(rawHtmlContent);
-
-                container.innerHTML = `
-                    <article>
-                        ${coverImageUrl ? `<img src="${coverImageUrl}" alt="${post.title || 'Article cover'}" class="w-full h-96 object-cover rounded-lg mb-8"/>` : ''}
-                        <h1 class="text-5xl font-extrabold mb-4 text-gray-900">${post.title || 'Untitled post'}</h1>
-
-                        <div class="flex items-center space-x-6 mb-8">
-                            <p class="text-md text-gray-500">Published on ${readableDate}</p>
-                            ${post.newspaperUrl ? `<a href="${post.newspaperUrl}" target="_blank" class="text-md text-green-600 hover:text-green-800 font-semibold">View Original Publication &rarr;</a>` : ''}
-                        </div>
-
-                        ${description ? `<div class="mb-10 p-4 bg-gray-100 border-l-4 border-blue-500 rounded-r-lg"><p class="text-lg text-gray-700 italic"><strong class="font-semibold not-italic text-gray-900">Summary:</strong> ${description}</p></div>` : ''}
-                        <div class="prose prose-lg max-w-none article-content">${finalHtmlContent}</div>
-                    </article>
-                `;
-
-                styleSubtitles(container);
-            } catch (error) {
-                console.error('Error fetching article:', error);
-                container.innerHTML = `<p class="text-center text-red-500">Could not load the article. Please check the console.</p>`;
-            } finally {
-                loadingIndicator.style.display = 'none';
-            }
-        }
-
-        document.getElementById('current-year').textContent = new Date().getFullYear();
-        fetchAndRenderArticle();
-    </script>
-</body>
-</html>
+<!DOCTYPE html>␊
+<html lang="en">␊
+<head>␊
+    <meta charset="UTF-8">␊
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">␊
+␊
+    <title>__POST_TITLE__</title>␊
+    <meta name="description" content="__POST_DESCRIPTION__">␊
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">␊
+    <link rel="canonical" href="__POST_URL__">␊
+␊
+    <meta property="og:title" content="__POST_TITLE__">␊
+    <meta property="og:description" content="__POST_DESCRIPTION__">␊
+    <meta property="og:image" content="__POST_IMAGE_URL__">␊
+    <meta property="og:url" content="__POST_URL__">␊
+    <meta property="og:type" content="article">␊
+␊
+    <script type="application/ld+json" id="structured-data">␊
+    {␊
+      "@context": "https://schema.org",␊
+      "@type": "BlogPosting",␊
+      "mainEntityOfPage": {␊
+        "@type": "WebPage",␊
+        "@id": "__POST_URL__"␊
+      },␊
+      "headline": "__POST_TITLE__",␊
+      "description": "__POST_DESCRIPTION__",␊
+      "image": "__POST_IMAGE_URL__",␊
+      "author": {␊
+        "@type": "Person",␊
+        "name": "Chenglin Pua"␊
+      },␊
+      "publisher": {␊
+        "@type": "Organization",␊
+        "name": "Chenglin Pua's Blog"␊
+      },␊
+      "datePublished": "__POST_PUBLISH_DATE__"␊
+    }␊
+    </script>␊
+␊
+    <script src="https://cdn.tailwindcss.com"></script>␊
+    <style>␊
+        .article-content p {␊
+            margin-bottom: 2rem;␊
+            text-align: justify;␊
+        }␊
+␊
+        .article-content p:first-of-type:not(:has(img))::first-letter,␊
+        .article-content p:first-of-type:has(img) + p::first-letter {␊
+            font-size: 4.5em;␊
+            font-weight: bold;␊
+            font-style: italic;␊
+            float: left;␊
+            line-height: 0.8;␊
+            margin-right: 0.1em;␊
+            margin-top: 0.05em;␊
+            color: #111827;␊
+        }␊
+␊
+        .subtitle-style {␊
+            font-weight: 700;␊
+            color: #1f2937;␊
+            text-align: left;␊
+            margin-top: 3rem;␊
+        }␊
+    </style>␊
+</head>␊
+<body class="bg-gray-50 text-gray-800">␊
+    <header class="bg-white shadow-sm">␊
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">␊
+            <a href="/" class="text-xl font-bold text-gray-900 hover:text-blue-600">&larr; Back to All Articles</a>␊
+        </div>␊
+    </header>␊
+␊
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">␊
+        <div id="article-container">␊
+            <div id="loading-indicator" class="text-center py-20">␊
+                <p class="text-lg text-gray-600">Loading article content...</p>␊
+            </div>␊
+        </div>␊
+    </main>␊
+␊
+    <footer class="mt-16 py-8 bg-gray-800 text-white">␊
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">␊
+             <p class="text-gray-400 text-sm">&copy; <span id="current-year"></span> Chenglin Pua. All Rights Reserved.</p>␊
+        </div>␊
+    </footer>␊
+␊
+    <script type="module">␊
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";␊
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";␊
+        import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";␊
+        import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";␊
+␊
+        const firebaseConfig = {␊
+          apiKey: "AIzaSyCZYc7e02iVgDio8lOvPkj0lgNbuN2q_kM",␊
+          authDomain: "chenglin-pua-blog.firebaseapp.com",␊
+          projectId: "chenglin-pua-blog",␊
+          storageBucket: "chenglin-pua-blog.firebasestorage.app",␊
+          messagingSenderId: "775858431734",␊
+          appId: "1:775858431734:web:dd49663c60087c3ba5eed7",␊
+          measurementId: "G-TC1DHDV12S"␊
+        };␊
+␊
+        const app = initializeApp(firebaseConfig);␊
+        const db = getFirestore(app);␊
+        const storage = getStorage(app);␊
+␊
+        function renderContent(htmlContent) {␊
+            return htmlContent.replace(/<a href="(https:\/\/www\.youtube\.com\/watch\?v=([a-zA-Z0-9_-]+))">.*<\/a>/g,␊
+                '<div class="aspect-video my-6"><iframe class="w-full h-full" src="https://www.youtube.com/embed/$2" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>'␊
+            );␊
+        }␊
+␊
+        function styleSubtitles(container) {␊
+            const paragraphs = container.querySelectorAll('.article-content p');␊
+            paragraphs.forEach(p => {␊
+                const text = p.textContent.trim();␊
+                const wordCount = text.split(/\s+/).filter(word => word.length > 0).length;␊
+                if (wordCount > 0 && wordCount < 10) {␊
+                    p.classList.add('subtitle-style');␊
+                }␊
+            });␊
+        }␊
+␊
+        function getPostIdFromUrl() {␊
+            const params = new URLSearchParams(window.location.search);␊
+            const queryId = params.get('id');␊
+            if (queryId) return queryId;␊
+␊
+            const segments = window.location.pathname.split('/').filter(Boolean);␊
+            if (segments.length >= 2 && segments[0] === 'posts') {␊
+                return decodeURIComponent(segments[1]);␊
+            }␊
+            return null;␊
+        }␊
+␊
+        async function resolveImageUrl(rawUrl) {␊
+            if (!rawUrl) return '';␊
+            if (rawUrl.startsWith('gs://')) {␊
+                try {␊
+                    return await getDownloadURL(ref(storage, rawUrl));␊
+                } catch (error) {␊
+                    console.error('Unable to resolve gs:// cover image URL:', error);␊
+                    return '';␊
+                }␊
+            }␊
+            return rawUrl;␊
+        }␊
+␊
+        function updateSeoTags({ title, description, imageUrl, canonicalUrl, publishDate }) {␊
+            document.title = `${title} | Chenglin Pua's Blog`;␊
+            document.querySelector('meta[name="description"]').setAttribute('content', description);␊
+            document.querySelector('meta[property="og:title"]').setAttribute('content', title);␊
+            document.querySelector('meta[property="og:description"]').setAttribute('content', description);␊
+            document.querySelector('meta[property="og:image"]').setAttribute('content', imageUrl || '');␊
+            document.querySelector('meta[property="og:url"]').setAttribute('content', canonicalUrl);␊
+            document.querySelector('link[rel="canonical"]').setAttribute('href', canonicalUrl);␊
+␊
+            const data = {␊
+                '@context': 'https://schema.org',␊
+                '@type': 'BlogPosting',␊
+                mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },␊
+                headline: title,␊
+                description,␊
+                image: imageUrl || '',␊
+                author: { '@type': 'Person', name: 'Chenglin Pua' },␊
+                publisher: { '@type': 'Organization', name: "Chenglin Pua's Blog" },␊
+                datePublished: publishDate || ''␊
+            };␊
+            document.getElementById('structured-data').textContent = JSON.stringify(data);␊
+        }␊
+␊
+        async function fetchAndRenderArticle() {␊
+            const container = document.getElementById('article-container');␊
+            const loadingIndicator = document.getElementById('loading-indicator');␊
+            const postId = getPostIdFromUrl();␊
+␊
+            if (!postId) {␊
+                container.innerHTML = '<p class="text-center text-red-500">Article ID is missing. Please go back and select an article.</p>';␊
+                return;␊
+            }␊
+␊
+            try {␊
+                const docRef = doc(db, 'blog post', postId);␊
+                const docSnap = await getDoc(docRef);␊
+␊
+                if (!docSnap.exists()) {␊
+                    container.innerHTML = `<p class="text-center text-red-500">Sorry, we couldn't find an article with that ID.</p>`;␊
+                    return;␊
+                }␊
+␊
+                const post = docSnap.data();␊
+                const description = (post.description && post.description.trim())␊
+                    ? post.description␊
+                    : (post.content ? `${post.content.substring(0, 160)}...` : 'Read this article on Chenglin Pua\'s blog.');␊
+                const publishDate = post.publishDate?.toDate?.().toISOString?.() || '';␊
+                const readableDate = post.publishDate?.toDate?.().toLocaleDateString?.() || 'Date not available';␊
+                const canonicalUrl = `${window.location.origin}${window.location.pathname}?id=${encodeURIComponent(postId)}`;
+                const coverImageUrl = await resolveImageUrl(post.coverImageUrl);␊
+␊
+                updateSeoTags({␊
+                    title: post.title || 'Untitled post',␊
+                    description,␊
+                    imageUrl: coverImageUrl,␊
+                    canonicalUrl,␊
+                    publishDate␊
+                });␊
+␊
+                const rawHtmlContent = marked.parse(post.content || '');␊
+                const finalHtmlContent = renderContent(rawHtmlContent);␊
+␊
+                container.innerHTML = `␊
+                    <article>␊
+                        ${coverImageUrl ? `<img src="${coverImageUrl}" alt="${post.title || 'Article cover'}" class="w-full h-96 object-cover rounded-lg mb-8"/>` : ''}␊
+                        <h1 class="text-5xl font-extrabold mb-4 text-gray-900">${post.title || 'Untitled post'}</h1>␊
+␊
+                        <div class="flex items-center space-x-6 mb-8">␊
+                            <p class="text-md text-gray-500">Published on ${readableDate}</p>␊
+                            ${post.newspaperUrl ? `<a href="${post.newspaperUrl}" target="_blank" class="text-md text-green-600 hover:text-green-800 font-semibold">View Original Publication &rarr;</a>` : ''}␊
+                        </div>␊
+␊
+                        ${description ? `<div class="mb-10 p-4 bg-gray-100 border-l-4 border-blue-500 rounded-r-lg"><p class="text-lg text-gray-700 italic"><strong class="font-semibold not-italic text-gray-900">Summary:</strong> ${description}</p></div>` : ''}␊
+                        <div class="prose prose-lg max-w-none article-content">${finalHtmlContent}</div>␊
+                    </article>␊
+                `;␊
+␊
+                styleSubtitles(container);␊
+            } catch (error) {␊
+                console.error('Error fetching article:', error);␊
+                container.innerHTML = `<p class="text-center text-red-500">Could not load the article. Please check the console.</p>`;␊
+            } finally {␊
+                loadingIndicator.style.display = 'none';␊
+            }␊
+        }␊
+␊
+        document.getElementById('current-year').textContent = new Date().getFullYear();␊
+        fetchAndRenderArticle();␊
+    </script>␊
+</body>␊
+</html>␊
