@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chenglin Pua's blog</title>
     <meta name="description" content="A platform for sharing reflections and insights—open to thoughtful dialogue and the exchange of ideas.">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <link rel="canonical" href="https://chenglin-pua-blog.web.app/">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
@@ -13,7 +15,6 @@
 </head>
 <body class="bg-gray-50 text-gray-800">
 
-    <!-- Header -->
     <header class="bg-white shadow-sm sticky top-0 z-20">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <h1 class="text-3xl font-bold text-gray-900">Chenglin's Thoughts</h1>
@@ -21,14 +22,10 @@
         </div>
     </header>
 
-    <!-- Main Content -->
     <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        
-        <!-- *** NEW: Pinned Articles Section *** -->
         <section id="pinned-articles-section" class="mb-16">
             <h2 class="text-2xl font-bold text-gray-800 border-b-2 border-blue-500 pb-2 mb-8">Some Reads</h2>
             <div id="pinned-articles-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <!-- Pinned articles will be dynamically inserted here -->
                 <div class="text-center text-gray-500 md:col-span-2 lg:col-span-3">Loading pinned articles...</div>
             </div>
         </section>
@@ -37,27 +34,21 @@
             <p class="text-lg text-gray-600">Loading articles...</p>
         </div>
 
-        <div id="articles-list" class="space-y-12">
-            <!-- Regular articles will be dynamically inserted here -->
-        </div>
+        <div id="articles-list" class="space-y-12"></div>
     </main>
 
-    <!-- Footer -->
     <footer class="mt-16 py-8 bg-gray-800 text-white">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div id="social-links-container" class="flex justify-center items-center space-x-6 mb-4">
-                <!-- Social links will be dynamically inserted here -->
-            </div>
+            <div id="social-links-container" class="flex justify-center items-center space-x-6 mb-4"></div>
             <p class="text-gray-400 text-sm">&copy; <span id="current-year"></span> Chenglin Pua. All Rights Reserved.</p>
         </div>
     </footer>
 
     <script type="module">
-        // --- CONSOLIDATED IMPORTS (ALL AT THE TOP) ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, query, orderBy, onSnapshot, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
-        // --- FIREBASE CONFIG ---
         const firebaseConfig = {
           apiKey: "AIzaSyCZYc7e02iVgDio8lOvPkj0lgNbuN2q_kM",
           authDomain: "chenglin-pua-blog.firebaseapp.com",
@@ -67,10 +58,11 @@
           appId: "1:775858431734:web:dd49663c60087c3ba5eed7",
           measurementId: "G-TC1DHDV12S"
         };
+
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const storage = getStorage(app);
 
-        // --- SOCIAL LINKS ---
         const socialLinks = [
             { name: "LinkedIn", url: "https://www.linkedin.com/in/leonard-pua-cheng-lin-38139418b/" },
             { name: "ResearchGate", url: "https://www.researchgate.net/profile/Pua-Chenglin/" },
@@ -79,118 +71,133 @@
             { name: "BiliBili", url: "https://space.bilibili.com/3493105227533275/" },
         ];
 
+        function buildPostUrl(postId) {
+            return `/posts/${encodeURIComponent(postId)}`;
+        }
+
+        function buildExcerpt(post) {
+            if (post.description && post.description.trim()) return post.description;
+            if (post.content && post.content.trim()) return `${post.content.substring(0, 150)}...`;
+            return 'Read this article on Chenglin Pua\'s blog.';
+        }
+
+        async function resolveImageUrl(rawUrl) {
+            if (!rawUrl) return 'https://via.placeholder.com/400x200.png?text=Image';
+            if (rawUrl.startsWith('gs://')) {
+                try {
+                    return await getDownloadURL(ref(storage, rawUrl));
+                } catch (error) {
+                    console.error('Unable to resolve gs:// cover image URL:', error);
+                    return 'https://via.placeholder.com/400x200.png?text=Image';
+                }
+            }
+            return rawUrl;
+        }
+
         function renderSocialLinks() {
             const container = document.getElementById('social-links-container');
-            container.innerHTML = socialLinks.map(link => 
+            container.innerHTML = socialLinks.map(link =>
                 `<a href="${link.url}" target="_blank" class="text-gray-300 hover:text-white transition">${link.name}</a>`
             ).join('<span class="text-gray-500">|</span>');
         }
 
-        // *** NEW: Pinned Articles Function ***
         async function fetchAndRenderPinnedArticles() {
             const container = document.getElementById('pinned-articles-container');
             if (!container) return;
 
-            // --- IMPORTANT: REPLACE WITH YOUR ACTUAL FIRESTORE DOCUMENT IDS ---
             const pinnedArticleIds = [
                 'Dvtvk9lQtspj79z4hLZB',
                 'YgcPIkqjudw5aVHjUKqq',
                 'bZlE4hKvfn3xiGHPxuVW'
             ];
-            const promises = pinnedArticleIds.map(id => getDoc(doc(db, "blog post", id)));
+
             try {
-                const docSnapshots = await Promise.all(promises);
-                const articlesHtml = docSnapshots.map(docSnap => {
-                    if (docSnap.exists()) {
-                        const post = docSnap.data();
-                        const postId = docSnap.id;
-const postUrl = `post.html?id=${encodeURIComponent(postId)}`; 
-const descriptionText = post.description || post.content.substring(0, 150) + '...';
-                        return `
-                            <div class="bg-white rounded-lg shadow-lg overflow-hidden transform hover:-translate-y-1 transition-transform duration-300 relative">
-                                <!-- Pin Icon -->
-                                <div class="absolute top-3 right-3 z-10 bg-white/50 backdrop-blur-sm rounded-full p-1">
-                                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-red-600 transform -rotate-45">
-                                        <path fill-rule="evenodd" d="M11.53 2.47a.75.75 0 011.06 0l.97 1.023a.75.75 0 001.06 0l2.122-2.122a.75.75 0 011.06 1.06l-2.122 2.122a.75.75 0 000 1.06l1.023.97a.75.75 0 010 1.06l-6.06 6.06a.75.75 0 01-1.06 0l-6.06-6.06a.75.75 0 010-1.06l1.023-.97a.75.75 0 000-1.06L3.47 3.53a.75.75 0 011.06-1.06l2.122 2.122a.75.75 0 001.06 0l.97-1.023z" clip-rule="evenodd" />
-                                        <path d="M10.72 9.72a.75.75 0 011.06 0l2.25 2.25a.75.75 0 01-1.06 1.06l-2.25-2.25a.75.75 0 010-1.06z" />
-                                    </svg>
-                                </div>
-                                <a href="${postUrl}">
-                                    <img src="${post.coverImageUrl || 'https://via.placeholder.com/400x200.png?text=Image'}" alt="${post.title}" class="w-full h-40 object-cover">
-                                </a>
-                                <div class="p-4">
-                                    <h3 class="font-bold text-lg mb-2 h-14 overflow-hidden">
-                                        <a href="${postUrl}" class="text-gray-900 hover:text-blue-600 transition">${post.title}</a>
-                                    </h3>
-                                    <p class="text-gray-600 text-sm leading-relaxed h-20 overflow-hidden">${descriptionText}</p>
-                                </div>
+                const docSnapshots = await Promise.all(pinnedArticleIds.map(id => getDoc(doc(db, 'blog post', id))));
+                const renderedCards = await Promise.all(docSnapshots.map(async (docSnap) => {
+                    if (!docSnap.exists()) return '';
+
+                    const post = docSnap.data();
+                    const postUrl = buildPostUrl(docSnap.id);
+                    const descriptionText = buildExcerpt(post);
+                    const coverImageUrl = await resolveImageUrl(post.coverImageUrl);
+
+                    return `
+                        <div class="bg-white rounded-lg shadow-lg overflow-hidden transform hover:-translate-y-1 transition-transform duration-300 relative">
+                            <div class="absolute top-3 right-3 z-10 bg-white/50 backdrop-blur-sm rounded-full p-1">
+                               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-red-600 transform -rotate-45">
+                                    <path fill-rule="evenodd" d="M11.53 2.47a.75.75 0 011.06 0l.97 1.023a.75.75 0 001.06 0l2.122-2.122a.75.75 0 011.06 1.06l-2.122 2.122a.75.75 0 000 1.06l1.023.97a.75.75 0 010 1.06l-6.06 6.06a.75.75 0 01-1.06 0l-6.06-6.06a.75.75 0 010-1.06l1.023-.97a.75.75 0 000-1.06L3.47 3.53a.75.75 0 011.06-1.06l2.122 2.122a.75.75 0 001.06 0l.97-1.023z" clip-rule="evenodd" />
+                                    <path d="M10.72 9.72a.75.75 0 011.06 0l2.25 2.25a.75.75 0 01-1.06 1.06l-2.25-2.25a.75.75 0 010-1.06z" />
+                                </svg>
                             </div>
-                        `;
-                    }
-                    return ''; 
-                }).join('');
-                container.innerHTML = articlesHtml;
+                            <a href="${postUrl}">
+                                <img src="${coverImageUrl}" alt="${post.title || 'Pinned article cover'}" class="w-full h-40 object-cover">
+                            </a>
+                            <div class="p-4">
+                                <h3 class="font-bold text-lg mb-2 h-14 overflow-hidden">
+                                    <a href="${postUrl}" class="text-gray-900 hover:text-blue-600 transition">${post.title || 'Untitled post'}</a>
+                                </h3>
+                                <p class="text-gray-600 text-sm leading-relaxed h-20 overflow-hidden">${descriptionText}</p>
+                            </div>
+                        </div>
+                    `;
+                }));
+
+                container.innerHTML = renderedCards.join('') || '<p class="text-center text-gray-500 col-span-3">No pinned articles available.</p>';
             } catch (error) {
-                console.error("Error fetching pinned articles:", error);
+                console.error('Error fetching pinned articles:', error);
                 container.innerHTML = '<p class="text-center text-red-500 col-span-3">Could not load pinned articles.</p>';
             }
         }
 
-        // --- REGULAR ARTICLES REAL-TIME FUNCTION ---
         function fetchAndRenderArticles() {
             const articlesList = document.getElementById('articles-list');
             const loadingIndicator = document.getElementById('loading-indicator');
-            const postsQuery = query(collection(db, "blog post"), orderBy("publishDate", "desc"));
-        
+            const postsQuery = query(collection(db, 'blog post'), orderBy('publishDate', 'desc'));
+
             onSnapshot(postsQuery, (querySnapshot) => {
-                loadingIndicator.style.display = 'none'; 
+                loadingIndicator.style.display = 'none';
                 if (querySnapshot.empty) {
                     articlesList.innerHTML = '<p class="text-center text-gray-500">No articles have been posted yet. Check back soon!</p>';
-                } else {
-                    const articlesHtml = querySnapshot.docs.map(doc => {
-                        const post = doc.data();
-                        const postId = doc.id;
-    const postUrl = `post.html?id=${encodeURIComponent(postId)}`;
-    const descriptionText = post.description || post.content.substring(0, 150) + '...';
-                        const publishDate = post.publishDate ? post.publishDate.toDate().toLocaleDateString() : 'Date not available';
-        
-                        // UPDATED PART: The line for coverImageUrl has been removed from here
-                        return `
-                            <article>
-                                <h2 class="text-3xl font-bold mb-2">
-                                    <a href="${postUrl}" class="text-gray-900 hover:text-blue-600 transition">${post.title}</a>
-                                </h2>
-                                <p class="text-sm text-gray-500 mb-4">Published on ${publishDate}</p>
-                                <p class="text-gray-600 leading-relaxed">${descriptionText}</p>
-                                <div class="mt-4 flex items-center space-x-6">
-                                    <a href="${postUrl}" class="text-blue-600 hover:text-blue-800 font-semibold">Read More &rarr;</a>
-                                    ${post.newspaperUrl ? `<a href="${post.newspaperUrl}" target="_blank" class="text-green-600 hover:text-green-800 font-semibold">View Publication &rarr;</a>` : ''}
-                                </div>
-                            </article>
-                        `;
-                    }).join('');
-                    articlesList.innerHTML = articlesHtml + `
-                        <div class="text-center pt-8">
-                            <p class="text-gray-500 italic">More coming soon...</p>
-                        </div>
-                    `;
+                    return;
                 }
+
+                const articlesHtml = querySnapshot.docs.map(docSnapshot => {
+                    const post = docSnapshot.data();
+                    const postUrl = buildPostUrl(docSnapshot.id);
+                    const descriptionText = buildExcerpt(post);
+                    const publishDate = post.publishDate ? post.publishDate.toDate().toLocaleDateString() : 'Date not available';
+
+                    return `
+                        <article>
+                            <h2 class="text-3xl font-bold mb-2">
+                                <a href="${postUrl}" class="text-gray-900 hover:text-blue-600 transition">${post.title || 'Untitled post'}</a>
+                            </h2>
+                            <p class="text-sm text-gray-500 mb-4">Published on ${publishDate}</p>
+                            <p class="text-gray-600 leading-relaxed">${descriptionText}</p>
+                            <div class="mt-4 flex items-center space-x-6">
+                                <a href="${postUrl}" class="text-blue-600 hover:text-blue-800 font-semibold">Read More &rarr;</a>
+                                ${post.newspaperUrl ? `<a href="${post.newspaperUrl}" target="_blank" class="text-green-600 hover:text-green-800 font-semibold">View Publication &rarr;</a>` : ''}
+                            </div>
+                        </article>
+                    `;
+                }).join('');
+
+                articlesList.innerHTML = `${articlesHtml}
+                    <div class="text-center pt-8">
+                        <p class="text-gray-500 italic">More coming soon...</p>
+                    </div>
+                `;
             }, (error) => {
-                console.error("Error fetching articles:", error);
+                console.error('Error fetching articles:', error);
                 articlesList.innerHTML = '<p class="text-center text-red-500">Could not load articles. Please check the console for errors.</p>';
                 loadingIndicator.style.display = 'none';
             });
         }
 
-        // --- INITIAL PAGE LOAD ---
         document.getElementById('current-year').textContent = new Date().getFullYear();
         renderSocialLinks();
-        fetchAndRenderPinnedArticles(); // Fetch pinned articles
-        fetchAndRenderArticles(); // Fetch all other articles
+        fetchAndRenderPinnedArticles();
+        fetchAndRenderArticles();
     </script>
 </body>
 </html>
-
-
-
-
