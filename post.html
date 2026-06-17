@@ -4,15 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>__POST_TITLE__</title>
-    <meta name="description" content="__POST_DESCRIPTION__">
-    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
-    <link rel="canonical" href="__POST_URL__">
+    <title>Loading article | Chenglin Pua's Blog</title>
+    <meta name="description" content="Read this article on Chenglin Pua's Blog.">
+    <meta name="robots" content="noindex, follow">
+    <link rel="canonical" href="https://chenglin-pua-blog.web.app/">
 
-    <meta property="og:title" content="__POST_TITLE__">
-    <meta property="og:description" content="__POST_DESCRIPTION__">
-    <meta property="og:image" content="__POST_IMAGE_URL__">
-    <meta property="og:url" content="__POST_URL__">
+    <meta property="og:title" content="Chenglin Pua's Blog">
+    <meta property="og:description" content="Read articles from Chenglin Pua's Blog.">
+    <meta property="og:image" content="">
+    <meta property="og:url" content="https://chenglin-pua-blog.web.app/">
     <meta property="og:type" content="article">
 
     <script type="application/ld+json" id="structured-data">
@@ -21,11 +21,11 @@
       "@type": "BlogPosting",
       "mainEntityOfPage": {
         "@type": "WebPage",
-        "@id": "__POST_URL__"
+        "@id": "https://chenglin-pua-blog.web.app/"
       },
-      "headline": "__POST_TITLE__",
-      "description": "__POST_DESCRIPTION__",
-      "image": "__POST_IMAGE_URL__",
+      "headline": "Chenglin Pua's Blog",
+      "description": "Read articles from Chenglin Pua's Blog.",
+      "image": "",
       "author": {
         "@type": "Person",
         "name": "Chenglin Pua"
@@ -34,7 +34,7 @@
         "@type": "Organization",
         "name": "Chenglin Pua's Blog"
       },
-      "datePublished": "__POST_PUBLISH_DATE__"
+      "datePublished": ""
     }
     </script>
 
@@ -135,6 +135,16 @@
             return null;
         }
 
+        function redirectLegacyPostUrl(postId) {
+            if (!postId) return false;
+            const canonicalPath = `/posts/${encodeURIComponent(postId)}`;
+            if (window.location.pathname !== canonicalPath) {
+                window.location.replace(canonicalPath);
+                return true;
+            }
+            return false;
+        }
+
         async function resolveImageUrl(rawUrl) {
             if (!rawUrl) return '';
             if (rawUrl.startsWith('gs://')) {
@@ -181,6 +191,8 @@
                 return;
             }
 
+            if (redirectLegacyPostUrl(postId)) return;
+
             try {
                 const docRef = doc(db, 'blog post', postId);
                 const docSnap = await getDoc(docRef);
@@ -196,7 +208,7 @@
                     : (post.content ? `${post.content.substring(0, 160)}...` : 'Read this article on Chenglin Pua\'s blog.');
                 const publishDate = post.publishDate?.toDate?.().toISOString?.() || '';
                 const readableDate = post.publishDate?.toDate?.().toLocaleDateString?.() || 'Date not available';
-                const canonicalUrl = `${window.location.origin}${window.location.pathname}?id=${encodeURIComponent(postId)}`;
+                const canonicalUrl = `${window.location.origin}/posts/${encodeURIComponent(postId)}`;
                 const coverImageUrl = await resolveImageUrl(post.coverImageUrl);
 
                 updateSeoTags({

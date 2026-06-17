@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://chenglin-pua-blog.web.app/sitemap.xml
