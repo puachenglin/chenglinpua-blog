@@ -6,7 +6,7 @@
     <title>Chenglin Pua's blog</title>
     <meta name="description" content="A platform for sharing reflections and insights—open to thoughtful dialogue and the exchange of ideas.">
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
-    <link rel="canonical" href="https://chenglin-pua-blog.web.app/">
+    <link rel="canonical" href="https://puachenglin.github.io/chenglinpua-blog/">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
@@ -62,6 +62,16 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const storage = getStorage(app);
+        const SITE_BASE_PATH = '/chenglinpua-blog';
+
+        function siteBasePath() {
+            const path = window.location.pathname;
+            return path === SITE_BASE_PATH || path.startsWith(`${SITE_BASE_PATH}/`) ? SITE_BASE_PATH : '';
+        }
+
+        function fallbackImageUrl() {
+            return `${siteBasePath()}/photo/fallback-cover.svg`;
+        }
 
         const socialLinks = [
             { name: "LinkedIn", url: "https://www.linkedin.com/in/leonard-pua-cheng-lin-38139418b/" },
@@ -72,7 +82,13 @@
         ];
 
         function buildPostUrl(postId) {
-            return `/posts/${encodeURIComponent(postId)}`;
+            return `${siteBasePath()}/post.html?id=${encodeURIComponent(postId)}`;
+        }
+
+        function getCoverImageCandidate(post) {
+            return post.coverImageUrl || post.coverImage || post.coverUrl || post.imageUrl ||
+                post.image || post.thumbnailUrl || post.photoUrl || post.imagePath ||
+                post.coverImagePath || '';
         }
 
         function buildExcerpt(post) {
@@ -82,16 +98,31 @@
         }
 
         async function resolveImageUrl(rawUrl) {
-            if (!rawUrl) return 'https://via.placeholder.com/400x200.png?text=Image';
-            if (rawUrl.startsWith('gs://')) {
+            if (!rawUrl || !String(rawUrl).trim()) return fallbackImageUrl();
+
+            const raw = String(rawUrl).trim();
+            if (/^(https?:|data:|blob:)/i.test(raw)) return raw;
+
+            if (raw.startsWith('gs://')) {
                 try {
-                    return await getDownloadURL(ref(storage, rawUrl));
+                    return await getDownloadURL(ref(storage, raw));
                 } catch (error) {
                     console.error('Unable to resolve gs:// cover image URL:', error);
-                    return 'https://via.placeholder.com/400x200.png?text=Image';
+                    return fallbackImageUrl();
                 }
             }
-            return rawUrl;
+
+            const localPath = raw.replace(/^\/+/, '');
+            try {
+                return await getDownloadURL(ref(storage, localPath));
+            } catch (error) {
+                return `${siteBasePath()}/${localPath}`;
+            }
+        }
+
+        function imageTag(src, alt, className) {
+            const safeAlt = String(alt || '').replace(/"/g, '&quot;');
+            return `<img src="${src}" alt="${safeAlt}" class="${className}" loading="lazy" onerror="this.onerror=null;this.src='${fallbackImageUrl()}'">`;
         }
 
         function renderSocialLinks() {
@@ -119,7 +150,7 @@
                     const post = docSnap.data();
                     const postUrl = buildPostUrl(docSnap.id);
                     const descriptionText = buildExcerpt(post);
-                    const coverImageUrl = await resolveImageUrl(post.coverImageUrl);
+                    const coverImageUrl = await resolveImageUrl(getCoverImageCandidate(post));
 
                     return `
                         <div class="bg-white rounded-lg shadow-lg overflow-hidden transform hover:-translate-y-1 transition-transform duration-300 relative">
@@ -130,7 +161,7 @@
                                 </svg>
                             </div>
                             <a href="${postUrl}">
-                                <img src="${coverImageUrl}" alt="${post.title || 'Pinned article cover'}" class="w-full h-40 object-cover">
+                                ${imageTag(coverImageUrl, post.title || 'Pinned article cover', 'w-full h-40 object-cover bg-gray-100')}
                             </a>
                             <div class="p-4">
                                 <h3 class="font-bold text-lg mb-2 h-14 overflow-hidden">

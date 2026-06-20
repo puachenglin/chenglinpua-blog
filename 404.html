@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecting | Chenglin Pua's Blog</title>
+    <meta name="robots" content="noindex">
+    <script>
+        (function () {
+            var basePath = '/chenglinpua-blog';
+            var segments = window.location.pathname.split('/').filter(Boolean);
+            var postsIndex = segments.indexOf('posts');
+
+            if (postsIndex !== -1 && segments[postsIndex + 1]) {
+                var postId = segments[postsIndex + 1];
+                window.location.replace(basePath + '/post.html?id=' + encodeURIComponent(decodeURIComponent(postId)));
+                return;
+            }
+
+            window.location.replace(basePath + '/');
+        }());
+    </script>
+</head>
+<body>
+    <p>Redirecting...</p>
+</body>
+</html>

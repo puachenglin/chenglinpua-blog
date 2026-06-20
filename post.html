@@ -7,7 +7,7 @@
     <title>Loading article | Chenglin Pua's Blog</title>
     <meta name="description" content="Read this article on Chenglin Pua's Blog.">
     <meta name="robots" content="noindex, follow">
-    <link rel="canonical" href="https://chenglin-pua-blog.web.app/">
+    <link rel="canonical" href="https://puachenglin.github.io/chenglinpua-blog/">
 
     <meta property="og:title" content="Chenglin Pua's Blog">
     <meta property="og:description" content="Read articles from Chenglin Pua's Blog.">
@@ -105,6 +105,16 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const storage = getStorage(app);
+        const SITE_BASE_PATH = '/chenglinpua-blog';
+
+        function siteBasePath() {
+            const path = window.location.pathname;
+            return path === SITE_BASE_PATH || path.startsWith(`${SITE_BASE_PATH}/`) ? SITE_BASE_PATH : '';
+        }
+
+        function fallbackImageUrl() {
+            return `${siteBasePath()}/photo/fallback-cover.svg`;
+        }
 
         function renderContent(htmlContent) {
             return htmlContent.replace(/<a href="(https:\/\/www\.youtube\.com\/watch\?v=([a-zA-Z0-9_-]+))">.*<\/a>/g,
@@ -129,33 +139,40 @@
             if (queryId) return queryId;
 
             const segments = window.location.pathname.split('/').filter(Boolean);
-            if (segments.length >= 2 && segments[0] === 'posts') {
-                return decodeURIComponent(segments[1]);
+            const postsIndex = segments.indexOf('posts');
+            if (postsIndex !== -1 && segments[postsIndex + 1]) {
+                return decodeURIComponent(segments[postsIndex + 1]);
             }
             return null;
         }
 
-        function redirectLegacyPostUrl(postId) {
-            if (!postId) return false;
-            const canonicalPath = `/posts/${encodeURIComponent(postId)}`;
-            if (window.location.pathname !== canonicalPath) {
-                window.location.replace(canonicalPath);
-                return true;
-            }
-            return false;
+        function getCoverImageCandidate(post) {
+            return post.coverImageUrl || post.coverImage || post.coverUrl || post.imageUrl ||
+                post.image || post.thumbnailUrl || post.photoUrl || post.imagePath ||
+                post.coverImagePath || '';
         }
 
         async function resolveImageUrl(rawUrl) {
-            if (!rawUrl) return '';
-            if (rawUrl.startsWith('gs://')) {
+            if (!rawUrl || !String(rawUrl).trim()) return '';
+
+            const raw = String(rawUrl).trim();
+            if (/^(https?:|data:|blob:)/i.test(raw)) return raw;
+
+            if (raw.startsWith('gs://')) {
                 try {
-                    return await getDownloadURL(ref(storage, rawUrl));
+                    return await getDownloadURL(ref(storage, raw));
                 } catch (error) {
                     console.error('Unable to resolve gs:// cover image URL:', error);
                     return '';
                 }
             }
-            return rawUrl;
+
+            const localPath = raw.replace(/^\/+/, '');
+            try {
+                return await getDownloadURL(ref(storage, localPath));
+            } catch (error) {
+                return `${siteBasePath()}/${localPath}`;
+            }
         }
 
         function updateSeoTags({ title, description, imageUrl, canonicalUrl, publishDate }) {
@@ -191,8 +208,6 @@
                 return;
             }
 
-            if (redirectLegacyPostUrl(postId)) return;
-
             try {
                 const docRef = doc(db, 'blog post', postId);
                 const docSnap = await getDoc(docRef);
@@ -208,8 +223,8 @@
                     : (post.content ? `${post.content.substring(0, 160)}...` : 'Read this article on Chenglin Pua\'s blog.');
                 const publishDate = post.publishDate?.toDate?.().toISOString?.() || '';
                 const readableDate = post.publishDate?.toDate?.().toLocaleDateString?.() || 'Date not available';
-                const canonicalUrl = `${window.location.origin}/posts/${encodeURIComponent(postId)}`;
-                const coverImageUrl = await resolveImageUrl(post.coverImageUrl);
+                const canonicalUrl = `${window.location.origin}${siteBasePath()}/post.html?id=${encodeURIComponent(postId)}`;
+                const coverImageUrl = await resolveImageUrl(getCoverImageCandidate(post));
 
                 updateSeoTags({
                     title: post.title || 'Untitled post',
@@ -224,7 +239,7 @@
 
                 container.innerHTML = `
                     <article>
-                        ${coverImageUrl ? `<img src="${coverImageUrl}" alt="${post.title || 'Article cover'}" class="w-full h-96 object-cover rounded-lg mb-8"/>` : ''}
+                        ${coverImageUrl ? `<img src="${coverImageUrl}" alt="${post.title || 'Article cover'}" class="w-full h-96 object-cover rounded-lg mb-8" onerror="this.onerror=null;this.src='${fallbackImageUrl()}'"/>` : ''}
                         <h1 class="text-5xl font-extrabold mb-4 text-gray-900">${post.title || 'Untitled post'}</h1>
 
                         <div class="flex items-center space-x-6 mb-8">
